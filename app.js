@@ -194,32 +194,31 @@ let Dealer = {
 //Resets the target player's total score to zero, then iterates through the target player's hand
 let updateValue = function (player) {
   let hand = player.currentHand;
-  player.value = 0;
   let value = 0;
+  player.value = 0;
 
   //array.slice is used to remove the suit (ex: "C" or "H") and the hyphen between the suit and value
   for (let i = 0; i < hand.length; i++) {
     let currentCard = hand[i].slice(2);
-    currentCard = convertValue(currentCard, player);
+    currentCard = convertValue(currentCard, value);
     value += currentCard;
   }
-
   return value;
 };
 
 //Checks if a card is a non-integer value (ex. "J" or "K") and assigns it an integer value
 let convertValue = function (card, player) {
-  let value = player.value;
-  if (card === "K" || card === "Q" || card === "J") {
-    value += 10;
-  }
+  let value = player;
 
+  if (card === "K" || card === "Q" || card === "J") {
+    value = 10;
+  }
   //Aces are evaluated by their value end-result. An ace should not = 11 when score + 11 > 21
   else if (card === "A") {
     if (value + 11 > 21) {
-      value += 1;
+      value = 1;
     } else {
-      value += 11;
+      value = 11;
     }
   } else {
     value = Number(card);
