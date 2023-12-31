@@ -6,20 +6,18 @@
 let deck = [];
 
 function startGame() {
-  //Create new Deck object, create new starting hands, re-enable hit button
+  //Create new Deck object, create new starting hands, re-enable hit and stand button, hide reset button
   deck = new Deck();
   Player.startingHand();
   Dealer.startingHand();
 
   document.getElementById("hit").disabled = false;
-
   document.getElementById("reset").hidden = true;
   document.getElementById("hit").hidden = false;
   document.getElementById("stay").hidden = false;
-
   document.getElementById("results").textContent = "";
 }
-
+//Run startGame() on window load
 window.addEventListener("load", function () {
   startGame();
 });
@@ -27,33 +25,42 @@ window.addEventListener("load", function () {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class Deck {
+  //Create deck class, which constructs a deck with reset() and shuffle()
   constructor() {
     this.deck = [];
     this.reset();
     this.shuffle();
   }
   reset() {
+    //Empty the current deck array
     this.deck = [];
 
-    const suit = ["C", "D", "H", "S"]; //C-Clubs D-Diamonds H-Hearts S-Spades
+    //C-Clubs D-Diamonds H-Hearts S-Spades
+    const suit = ["C", "D", "H", "S"];
+
+    //A-Ace J-Jack Q-Queen K-King
     const value = ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K"];
 
+    //Creates an array with values like ["C-A", "C-2"], etc. This deck is sequential and not shuffled.
     for (let i = 0; i < suit.length; i++) {
       for (let j = 0; j < value.length; j++) {
-        this.deck.push(`${suit[i]}-${value[j]}`); //Creates an array with values like ["C-A", "C-2"], etc.
+        this.deck.push(`${suit[i]}-${value[j]}`);
       }
     }
   }
   shuffle() {
+    //This is the unsuffled deck created by reset();
     let deck = this.deck;
-    let deckLength = deck.length;
+    let deckLength = deck.length; //51
     let randomCardIndex;
 
-    //Selects a random card within the array, then removes that index from the next iteration
-    //Creates a non-biased shuffle
+    //Selects a random card within the array, assigns it a new array index, then removes that index from the next iteration
     while (deckLength) {
-      randomCardIndex = Math.floor(Math.random() * deckLength);
-      deckLength--;
+      //Creates a value between 0 and 51
+      randomCardIndex = Math.floor(Math.random() * deckLength--);
+
+      //Last card in array is "S-K", or deck[51]. Set deck[51] equal to deck[random], and set deck[random] to deck[51]
+      //deckLength-- removes deck[51] from the next iteration, so deck[50] is randomized next
       [deck[deckLength], deck[randomCardIndex]] = [
         deck[randomCardIndex],
         deck[deckLength],
@@ -62,7 +69,8 @@ class Deck {
     return this;
   }
   deal() {
-    return this.deck.pop(); //Deals a card off the top of the deck, by choosing the last array value
+    //Deals a card off the top of the deck, by choosing the last array value
+    return this.deck.pop();
   }
 }
 
@@ -70,27 +78,39 @@ class Deck {
 
 let Player = {
   //Player object
-  value: 0, //Point value of current hand
+
+  //Point value of current hand
+  value: 0,
   currentHand: [],
 
-  cardElement: document.getElementById("your-cards"), //Element for populating card .png's
-  pointElement: document.getElementById("your-sum"), //Element for displaying player score
+  //Element for populating card .png's
+  cardElement: document.getElementById("your-cards"),
+
+  //Element for displaying player score
+  pointElement: document.getElementById("your-sum"),
 
   startingHand() {
-    this.currentHand = []; //Reset current hand
-    this.value = 0; //Reset hand pont-value
-    this.cardElement.innerHTML = ""; //Reset image element
-    this.pointElement.innerHTML = ""; //Reset point score element
+    //Reset current hand, score-value, image element, score element
+    this.currentHand = [];
+    this.value = 0;
+    this.cardElement.innerHTML = "";
+    this.pointElement.innerHTML = "";
 
+    //Deal two cards, and create a new image for each
     for (let i = 0; i < 2; i++) {
-      //Deal two cards
-      let card = new Image();
-      let cardValue = deck.deal();
+      const card = new Image();
+      const cardValue = deck.deal();
 
-      this.currentHand.push(cardValue); //Add card to current hand
-      card.src = `cards/${cardValue}.png`; //Set image source to the string value of dealt card
-      this.cardElement.appendChild(card); //Add card to the card element
+      //Add card to current hand
+      this.currentHand.push(cardValue);
+
+      //Set image source to the string value of dealt card
+      card.src = `cards/${cardValue}.png`;
+
+      //Add card to the card element
+      this.cardElement.appendChild(card);
     }
+    //updateValue resets and reiterates through the currentHand[] to return a total score-value
     this.value = updateValue(this);
     this.pointElement.textContent = this.value;
   },
@@ -100,62 +120,84 @@ let Player = {
 
 let Dealer = {
   //Dealer Object
-  value: 0, //Point value of current Dealer hand including hidden card
-  hiddenValue: 0, //Point value of hidden card
-  currentHand: [],
-  revealedCard: "", //Image value of the hidden card
 
-  cardElement: document.getElementById("dealer-cards"), //Element for populating card images
-  pointElement: document.getElementById("dealer-sum"), //Element for updating Dealer score
+  //Score value of Dealer currentHand[] including the face-down card
+  value: 0,
+  currentHand: [],
+
+  //Image value and score-value of the face-down card
+  revealedCard: "",
+  hiddenValue: 0,
+
+  //Element for populating card images
+  cardElement: document.getElementById("dealer-cards"),
+
+  //Element for updating Dealer score
+  pointElement: document.getElementById("dealer-sum"),
 
   startingHand() {
-    this.currentHand = []; //Reset current hand
-    this.value = 0; //Reset total score
-    this.hiddenValue = 0; //Reset hidden card score
-
-    this.cardElement.innerHTML = ""; //Reset both image and score elements
+    //Reset current hand, score-value, face-down card score-value, image element, and score element
+    this.currentHand = [];
+    this.value = 0;
+    this.hiddenValue = 0;
+    this.cardElement.innerHTML = "";
     this.pointElement.innerHTML = "";
 
-    let hiddenCard = new Image();
-    let hiddenValue = deck.deal(); //Deal one card
+    //Deal one card and create a new image
+    const hiddenCard = new Image();
+    let hiddenValue = deck.deal();
 
-    console.log(hiddenValue);
-    this.currentHand.push(hiddenValue); //Push this card to the current hand array
-    hiddenCard.src = "cards/BACK.png"; //Create a image src string to call the revealed card later
-    this.revealedCard = `cards/${hiddenValue}.png`; //Set card image to cardback
-    hiddenCard.setAttribute("id", "hidden-card"); //Set element ID to 'hidden-card' so we can alter the element later
-    this.cardElement.appendChild(hiddenCard); //Add card image to element
-    hiddenValue = updateValue(this); //updateValue converts hand array componenets to values and adds them together
+    //Add value of face-down card to the currentHand and set it's image source to a face-down card
+    this.currentHand.push(hiddenValue);
+    hiddenCard.src = "cards/BACK.png";
 
-    let card = new Image(); //Deal one card
+    //Store the image source string of the dealt card to be revealed later
+    this.revealedCard = `cards/${hiddenValue}.png`;
+
+    //Set element ID to 'hidden-card' and add face-down card image to image element
+    hiddenCard.setAttribute("id", "hidden-card");
+    this.cardElement.appendChild(hiddenCard);
+    hiddenValue = updateValue(this);
+
+    //Create a new image element, then deal one card
+    const card = new Image();
     let value = deck.deal();
 
-    this.currentHand.push(value); //Add this one card to the image element and hand array
+    //Add card to current hand, set image source to the string value of dealt card, and dd card to the card element
+    this.currentHand.push(value);
     card.src = `cards/${value}.png`;
     this.cardElement.appendChild(card);
-    value = updateValue(this);
 
+    //value represents the total hand value, converted by using updateValue()
+    value = updateValue(this);
     this.value = value;
+
+    //The dealer score element should not show the value of the hidden card
     this.pointElement.textContent = value - hiddenValue;
 
-    if (this.value === 21) {
+    //This conditional checks for a dealer win on starting hand
+    if (this.value === 21 && Player.value < 21) {
       postResult("lose");
     }
   },
 
   revealCard() {
-    let card = document.getElementById("hidden-card");
+    //Changes the image source of the face-down card to the revealedCard string, and then updates the score element
+    const card = document.getElementById("hidden-card");
     card.src = this.revealedCard;
     this.pointElement.textContent = this.value;
   },
 };
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//Resets the target player's total score to zero, then iterates through the target player's hand
 let updateValue = function (player) {
   let hand = player.currentHand;
   player.value = 0;
   let value = 0;
 
+  //array.slice is used to remove the suit (ex: "C" or "H") and the hyphen between the suit and value
   for (let i = 0; i < hand.length; i++) {
     let currentCard = hand[i].slice(2);
     currentCard = convertValue(currentCard, player);
@@ -165,11 +207,15 @@ let updateValue = function (player) {
   return value;
 };
 
+//Checks if a card is a non-integer value (ex. "J" or "K") and assigns it an integer value
 let convertValue = function (card, player) {
   let value = player.value;
   if (card === "K" || card === "Q" || card === "J") {
     value += 10;
-  } else if (card === "A") {
+  }
+
+  //Aces are evaluated by their value end-result. An ace should not = 11 when score + 11 > 21
+  else if (card === "A") {
     if (value + 11 > 21) {
       value += 1;
     } else {
@@ -183,18 +229,26 @@ let convertValue = function (card, player) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//Identify the hit button element
 const hit = document.getElementById("hit");
 
 hit.addEventListener("click", function () {
+  //Create a new image element and deal a new card
   let card = new Image();
   let value = deck.deal();
 
+  //Add card to currentHand[], determine it's image source, and append the image to the card image element
   Player.currentHand.push(value);
   card.src = `cards/${value}.png`;
   Player.cardElement.appendChild(card);
+
+  //updateValue resets the target player's total score to zero, then iterates through the target player's hand
+  //Once the new total value has been returned, the score element and Player.value are updated
   value = updateValue(Player);
   Player.pointElement.innerHTML = value;
   Player.value = value;
+
+  //checkWinner() evaluates Player.value and Dealer.value to determine a winner
   if (value > 21) {
     checkWinner();
   }
@@ -202,38 +256,47 @@ hit.addEventListener("click", function () {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//Indentify the stay button element
 const stay = document.getElementById("stay");
 
 stay.addEventListener("click", function () {
+  //Disable the hit button
   document.getElementById("hit").disabled = true;
 
+  //Reveal the face-down card and add it's value to the current hand and Dealer score
   Dealer.revealCard();
   let value = Dealer.value;
   let hand = Dealer.currentHand;
 
+  //By blackjack rules, the Dealer must stand on a soft 17 and hit when score < 17
   while (value < 17) {
+    //Create new image and deal a new card
     let card = new Image();
     let cardValue = deck.deal();
+
+    //Add card to currentHand[], determine it's image source, and append the image to the card image element
     hand.push(cardValue);
     card.src = `cards/${cardValue}.png`;
     Dealer.cardElement.appendChild(card);
+
+    //value represents the total hand value, converted by using updateValue()
     value = updateValue(Dealer);
     Dealer.value = value;
   }
-
+  //Update Dealer score element
   Dealer.pointElement.textContent = value;
-  console.log(Dealer.value);
+
+  //checkWinner() evaluates Player.value and Dealer.value to determine a winner
   checkWinner();
 });
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-let checkWinner = function () {
+const checkWinner = function () {
   let playerValue = Player.value;
-  console.log(playerValue);
   let dealerValue = Dealer.value;
-  console.log(dealerValue);
 
+  //Evaluates Player score and Dealer score to determine a winner
   if (dealerValue === 21 && playerValue < 21) {
     postResult("lose");
   } else if (dealerValue <= 21 && playerValue < dealerValue) {
@@ -249,7 +312,8 @@ let checkWinner = function () {
   }
 };
 
-let postResult = function (result) {
+const postResult = function (result) {
+  //Updates results element based on result argument
   if (result === "lose") {
     document.getElementById("results").textContent = "BUST";
   } else if (result === "push") {
@@ -260,6 +324,7 @@ let postResult = function (result) {
     document.getElementById("results").textContent = "YOU WIN!";
   }
 
+  //Hides the hit and stand buttons, reveals the reset button
   document.getElementById("reset").hidden = false;
   document.getElementById("hit").hidden = true;
   document.getElementById("stay").hidden = true;
@@ -267,8 +332,10 @@ let postResult = function (result) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//Identify the reset button element
 const reset = document.getElementById("reset");
 
 reset.addEventListener("click", function () {
+  //The reset button starts a new game
   startGame();
 });
